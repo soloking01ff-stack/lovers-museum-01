@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -157,8 +158,16 @@ new THREE.MeshStandardMaterial({color:0x171717})
 );
 group.add(border);
 
-const mat=new THREE.MeshStandardMaterial({color:0x9b8c78});
-const surface=new THREE.Mesh(new THREE.BoxGeometry(1.85,1.35,0.05),mat);
+const mat=new THREE.MeshStandardMaterial({
+color:0x9b8c78,
+map:data.texture||null
+});
+
+const surface=new THREE.Mesh(
+new THREE.BoxGeometry(1.85,1.35,0.05),
+mat
+);
+
 surface.position.z=0.08;
 group.add(surface);
 
@@ -172,8 +181,8 @@ frames.length=0;
 photoMeshes.length=0;
 
 // Back wall
-photoData.forEach((d,i)=>{
-const x=-5.25+(i%6)*2.1;
+photoData.slice(0,6).forEach((d,i)=>{
+const x=-5.25+i*2.1;
 const y=2;
 const z=-6.8;
 makeFrame(d,x,y,z,0);
