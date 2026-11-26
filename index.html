@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -120,13 +119,9 @@ part(new THREE.BoxGeometry(0.12,0.48,0.12),shirt,0.29,1.15,0);
 part(new THREE.SphereGeometry(0.07),skin,-0.29,0.87,0);
 part(new THREE.SphereGeometry(0.07),skin,0.29,0.87,0);
 
-// Legs
-part(new THREE.BoxGeometry(0.16,0.55,0.18),pants,-0.12,0.52,0);
-part(new THREE.BoxGeometry(0.16,0.55,0.18),pants,0.12,0.52,0);
-
-// Shoes
-part(new THREE.BoxGeometry(0.2,0.12,0.3),shoes,-0.12,0.12,0.05);
-part(new THREE.BoxGeometry(0.2,0.12,0.3),shoes,0.12,0.12,0.05);
+// Legs with walking animation
+const leftLeg=part(new THREE.BoxGeometry(0.16,0.55,0.18),pants,-0.12,0.52,0);
+const rightLeg=part(new THREE.BoxGeometry(0.16,0.55,0.18),pants,0.12,0.52,0);
 
 // Photo frame function
 const frames=[];
@@ -233,40 +228,82 @@ document.getElementById('close').onclick=()=>{
 document.getElementById('popup').style.display='none';
 };
 
-// Camera follows character
+// Camera rotation + movement
 let angle=0;
-const speed=0.055;
+let speed=0.055;
+let walkTime=0;
+let dragging=false;
+let lastX=0;
 
+// Drag screen to rotate camera
+renderer.domElement.style.touchAction='none';
+
+renderer.domElement.addEventListener('pointerdown',e=>{
+dragging=true;
+lastX=e.clientX;
+});
+
+addEventListener('pointerup',()=>{
+dragging=false;
+});
+
+renderer.domElement.addEventListener('pointermove',e=>{
+if(!dragging)return;
+angle-=(e.clientX-lastX)*0.005;
+lastX=e.clientX;
+});
+
+// Movement animation
 function animate(){
 requestAnimationFrame(animate);
 
 let forwardMove=movingForward ? 1 : -moveY;
 let sideways=moveX;
 
-const dir=new THREE.Vector3(sideways,0,forwardMove);
-if(dir.length()>1)dir.normalize();
+// Camera-relative movement
+let dx=sideways*Math.cos(angle)-forwardMove*Math.sin(angle);
+let dz=-sideways*Math.sin(angle)-forwardMove*Math.cos(angle);
 
-const sin=Math.sin(angle),cos=Math.cos(angle);
-character.position.x+= (dir.x*cos-dir.z*sin)*speed;
-character.position.z+= (dir.x*sin+dir.z*cos)*speed;
+let moving=Math.abs(dx)>0.01||Math.abs(dz)>0.01;
 
-// Keep within museum
+if(moving){
+let len=Math.sqrt(dx*dx+dz*dz);
+dx/=len;
+dz/=len;
+
+character.position.x+=dx*speed;
+character.position.z+=dz*speed;
+
+// Face direction of movement
+character.rotation.y=Math.atan2(dx,dz);
+
+// Walking animation
+walkTime+=0.18;
+leftLeg.rotation.x=Math.sin(walkTime)*0.45;
+rightLeg.rotation.x=Math.sin(walkTime+Math.PI)*0.45;
+}else{
+leftLeg.rotation.x=0;
+rightLeg.rotation.x=0;
+}
+
+// Keep character inside museum
 character.position.x=Math.max(-5.5,Math.min(5.5,character.position.x));
 character.position.z=Math.max(-6,Math.min(5,character.position.z));
 
-// Character orientation
-if(Math.abs(moveX)>0.1||Math.abs(moveY)>0.1||movingForward){
-character.rotation.y=angle;
-}
-
-// Camera follows
-camera.position.x=character.position.x;
-camera.position.z=character.position.z+5;
+// Camera follows and rotates
+camera.position.x=character.position.x+Math.sin(angle)*5;
+camera.position.z=character.position.z+Math.cos(angle)*5;
 camera.position.y=1.65;
-camera.lookAt(character.position.x,1.3,character.position.z-2);
+
+camera.lookAt(
+character.position.x,
+1.3,
+character.position.z
+);
 
 renderer.render(scene,camera);
 }
+
 animate();
 
 addEventListener('resize',()=>{
