@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,16 +15,33 @@ body{margin:0;overflow:hidden;background:#111;color:white;font-family:Arial,sans
 #stick{width:125px;height:125px;border-radius:50%;background:#ffffff30;border:2px solid #ffffff70;position:relative;pointer-events:auto;touch-action:none}
 #knob{width:50px;height:50px;border-radius:50%;background:#fff;position:absolute;left:35px;top:35px;box-shadow:0 2px 8px #0006}
 #forward{width:78px;height:78px;border-radius:50%;border:2px solid #ffffff80;background:#ffffff40;color:#111;font-size:30px;pointer-events:auto;touch-action:none}
-#popup{display:none;position:fixed;inset:0;background:#000b;align-items:center;justify-content:center;padding:20px}
+#popup{display:none;position:fixed;inset:0;background:#000c;align-items:center;justify-content:center;padding:20px;z-index:5}
 #popupbox{background:#eee;color:#222;padding:15px;border-radius:15px;max-width:450px;width:100%;text-align:center}
-#popup img{width:100%;max-height:60vh;object-fit:contain}
+#pimage{width:100%;max-height:60vh;object-fit:contain}
 #close{padding:12px 30px;border:0;border-radius:20px;margin-top:10px}
+#galleryBtn,#uploadBtn{position:fixed;top:100px;left:12px;padding:10px 14px;border-radius:20px;border:1px solid #ffffff80;background:#222c;color:white;z-index:2}
+#galleryBtn{left:auto;right:12px}
+#uploadPanel{display:none;position:fixed;inset:0;background:#101015f5;z-index:6;overflow:auto;padding:20px}
+#panelBox{max-width:600px;margin:auto}
+#uploadPanel input,#uploadPanel button{padding:12px;margin:6px 0}
+#uploadPanel input{max-width:100%}
+#photoList{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:15px}
+.photoCard{background:#282830;border-radius:12px;padding:10px}
+.photoCard img{width:100%;height:150px;object-fit:cover;border-radius:8px}
+.photoCard input{width:100%;border-radius:6px}
+.photoCard button{width:100%;border:0;border-radius:6px;background:#922;color:white}
+#panelClose{background:#fff;color:#111;border:0;border-radius:10px}
+#status{font-size:13px;color:#ddd}
 </style>
 </head>
 <body>
+
 <div id="scene"></div>
 <div id="title">Our Museum</div>
 <div id="hint">Explore our memories</div>
+
+<button id="uploadBtn">＋ Add Photos</button>
+<button id="galleryBtn">Gallery</button>
 
 <div id="controls">
 <div id="stick"><div id="knob"></div></div>
@@ -34,20 +52,31 @@ body{margin:0;overflow:hidden;background:#111;color:white;font-family:Arial,sans
 <div id="popupbox">
 <h2 id="ptitle">Memory</h2>
 <img id="pimage" src="">
-<p id="ptext">A special memory</p>
+<p id="ptext"></p>
 <button id="close">Close</button>
+</div>
+</div>
+
+<div id="uploadPanel">
+<div id="panelBox">
+<h2>My Museum Photos</h2>
+<p>Add multiple photos. Name is optional.</p>
+<input id="fileInput" type="file" accept="image/*" multiple>
+<p id="status">Choose your photos.</p>
+<div id="photoList"></div>
+<button id="panelClose">Close</button>
 </div>
 </div>
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
 
+// Scene
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0xbbb5a9);
 scene.fog=new THREE.Fog(0xbbb5a9,15,35);
 
 const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.1,100);
-camera.position.set(0,1.65,5);
 
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth,innerHeight);
@@ -56,8 +85,7 @@ renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 document.getElementById('scene').appendChild(renderer.domElement);
 
-const light=new THREE.HemisphereLight(0xffffff,0x777060,2);
-scene.add(light);
+scene.add(new THREE.HemisphereLight(0xffffff,0x777060,2));
 
 const lamp=new THREE.DirectionalLight(0xffffff,2);
 lamp.position.set(3,6,4);
@@ -73,18 +101,14 @@ scene.add(m);
 return m;
 }
 
-// Floor
+// Museum
 box(14,0.2,20,0,-0.1,0,0xc8c1b5);
-
-// Walls
 box(14,5,0.2,0,2.5,-7,0xe7e1d7);
 box(0.2,5,14,-7,2.5,0,0xe7e1d7);
 box(0.2,5,14,7,2.5,0,0xe7e1d7);
-
-// Ceiling
 box(14,0.2,14,0,5,0,0x292929);
 
-// Simple character
+// Character
 const character=new THREE.Group();
 scene.add(character);
 character.position.set(0,0,3);
@@ -102,51 +126,253 @@ character.add(a);
 return a;
 }
 
-// Head
 part(new THREE.SphereGeometry(0.18,16,16),skin,0,1.65,0);
-
-// Hair
 part(new THREE.SphereGeometry(0.19,16,16),new THREE.MeshStandardMaterial({color:0x30241f}),0,1.75,-0.03);
-
-// Body
 part(new THREE.BoxGeometry(0.42,0.55,0.25),shirt,0,1.15,0);
-
-// Arms
 part(new THREE.BoxGeometry(0.12,0.48,0.12),shirt,-0.29,1.15,0);
 part(new THREE.BoxGeometry(0.12,0.48,0.12),shirt,0.29,1.15,0);
-
-// Hands
 part(new THREE.SphereGeometry(0.07),skin,-0.29,0.87,0);
 part(new THREE.SphereGeometry(0.07),skin,0.29,0.87,0);
 
-// Legs with walking animation
 const leftLeg=part(new THREE.BoxGeometry(0.16,0.55,0.18),pants,-0.12,0.52,0);
 const rightLeg=part(new THREE.BoxGeometry(0.16,0.55,0.18),pants,0.12,0.52,0);
 
-// Photo frame function
+part(new THREE.BoxGeometry(0.2,0.12,0.3),shoes,-0.12,0.12,0.05);
+part(new THREE.BoxGeometry(0.2,0.12,0.3),shoes,0.12,0.12,0.05);
+
+// Gallery
 const frames=[];
-function photoFrame(x,y,z,rotation,title,color){
-const frame=new THREE.Group();
-frame.position.set(x,y,z);
-frame.rotation.y=rotation;
-scene.add(frame);
+const photoData=[];
+const photoMeshes=[];
 
-const border=new THREE.Mesh(new THREE.BoxGeometry(2.1,1.6,0.12),new THREE.MeshStandardMaterial({color:0x171717}));
-frame.add(border);
+function makeFrame(data,x,y,z,rotation){
+const group=new THREE.Group();
+group.position.set(x,y,z);
+group.rotation.y=rotation;
+scene.add(group);
 
-const inside=new THREE.Mesh(new THREE.BoxGeometry(1.85,1.35,0.05),new THREE.MeshStandardMaterial({color}));
-inside.position.z=0.08;
-frame.add(inside);
+const border=new THREE.Mesh(
+new THREE.BoxGeometry(2.1,1.6,0.12),
+new THREE.MeshStandardMaterial({color:0x171717})
+);
+group.add(border);
 
-frames.push({object:frame,title,color});
+const mat=new THREE.MeshStandardMaterial({color:0x9b8c78});
+const surface=new THREE.Mesh(new THREE.BoxGeometry(1.85,1.35,0.05),mat);
+surface.position.z=0.08;
+group.add(surface);
+
+frames.push({object:group,data,surface});
+photoMeshes.push(surface);
 }
 
-// Temporary placeholder memories
-photoFrame(-3.5,2,-6.8,0,"Memory 1",0xb78369);
-photoFrame(0,2,-6.8,0,"Memory 2",0xd5b7a1);
-photoFrame(3.5,2,-6.8,0,"Memory 3",0x8e9c91);
-photoFrame(-6.8,2,-2,Math.PI/2,"Memory 4",0xc7a58c);
-photoFrame(6.8,2,-2,-Math.PI/2,"Memory 5",0xa5b4c0);
+function arrangePhotos(){
+frames.forEach(f=>scene.remove(f.object));
+frames.length=0;
+photoMeshes.length=0;
+
+// Back wall
+photoData.forEach((d,i)=>{
+const x=-5.25+(i%6)*2.1;
+const y=2;
+const z=-6.8;
+makeFrame(d,x,y,z,0);
+});
+
+// Left wall
+photoData.slice(6,12).forEach((d,i)=>{
+makeFrame(d,-6.8,2,-4.5+i*1.8,Math.PI/2);
+});
+
+// Right wall
+photoData.slice(12,18).forEach((d,i)=>{
+makeFrame(d,6.8,2,-4.5+i*1.8,-Math.PI/2);
+});
+
+// Additional back-wall row
+photoData.slice(18).forEach((d,i)=>{
+makeFrame(d,-5.25+i*2.1,3.8,-6.8,0);
+});
+}
+
+// IndexedDB persistence
+const DB_NAME='MuseumPhotoDB';
+const DB_STORE='photos';
+
+function openDB(){
+return new Promise((resolve,reject)=>{
+const request=indexedDB.open(DB_NAME,1);
+request.onupgradeneeded=()=>{
+request.result.createObjectStore(DB_STORE,{keyPath:'id',autoIncrement:true});
+};
+request.onsuccess=()=>resolve(request.result);
+request.onerror=()=>reject(request.error);
+});
+}
+
+async function savePhoto(record){
+const db=await openDB();
+return new Promise((resolve,reject)=>{
+const tx=db.transaction(DB_STORE,'readwrite');
+tx.objectStore(DB_STORE).add(record);
+tx.oncomplete=()=>resolve();
+tx.onerror=()=>reject(tx.error);
+});
+}
+
+async function getPhotos(){
+const db=await openDB();
+return new Promise((resolve,reject)=>{
+const tx=db.transaction(DB_STORE,'readonly');
+const req=tx.objectStore(DB_STORE).getAll();
+req.onsuccess=()=>resolve(req.result);
+req.onerror=()=>reject(req.error);
+});
+}
+
+async function deletePhoto(id){
+const db=await openDB();
+return new Promise((resolve,reject)=>{
+const tx=db.transaction(DB_STORE,'readwrite');
+tx.objectStore(DB_STORE).delete(id);
+tx.oncomplete=()=>resolve();
+tx.onerror=()=>reject(tx.error);
+});
+}
+
+async function updatePhoto(id,name){
+const db=await openDB();
+return new Promise((resolve,reject)=>{
+const tx=db.transaction(DB_STORE,'readwrite');
+const store=tx.objectStore(DB_STORE);
+const req=store.get(id);
+req.onsuccess=()=>{
+if(req.result){
+req.result.name=name;
+store.put(req.result);
+}
+};
+tx.oncomplete=()=>resolve();
+tx.onerror=()=>reject(tx.error);
+});
+}
+
+// Load images as textures
+function loadTexture(blob){
+return new Promise(resolve=>{
+const url=URL.createObjectURL(blob);
+const loader=new THREE.TextureLoader();
+loader.load(url,texture=>{
+texture.colorSpace=THREE.SRGBColorSpace;
+URL.revokeObjectURL(url);
+resolve(texture);
+},undefined,()=>{
+URL.revokeObjectURL(url);
+resolve(null);
+});
+});
+}
+
+async function rebuildGallery(){
+photoData.length=0;
+const saved=await getPhotos();
+for(const p of saved){
+const texture=await loadTexture(p.blob);
+if(!texture)continue;
+const data={id:p.id,name:p.name||'',blob:p.blob,texture};
+photoData.push(data);
+}
+arrangePhotos();
+}
+
+function setFrameTexture(frame,texture){
+frame.surface.material.dispose();
+frame.surface.material=new THREE.MeshStandardMaterial({map:texture});
+}
+
+// Frame click
+const raycaster=new THREE.Raycaster();
+const pointer=new THREE.Vector2();
+
+renderer.domElement.addEventListener('click',e=>{
+if(dragging)return;
+pointer.x=(e.clientX/innerWidth)*2-1;
+pointer.y=-(e.clientY/innerHeight)*2+1;
+raycaster.setFromCamera(pointer,camera);
+
+const hits=raycaster.intersectObjects(photoMeshes,false);
+if(hits.length){
+const surface=hits[0].object;
+const f=frames.find(a=>a.surface===surface);
+if(!f)return;
+document.getElementById('ptitle').textContent=f.data.name||'Memory';
+document.getElementById('pimage').src=URL.createObjectURL(f.data.blob);
+document.getElementById('ptext').textContent=f.data.name||'';
+document.getElementById('popup').style.display='flex';
+}
+});
+
+document.getElementById('close').onclick=()=>{
+document.getElementById('popup').style.display='none';
+document.getElementById('pimage').src='';
+};
+
+// Upload interface
+const panel=document.getElementById('uploadPanel');
+const list=document.getElementById('photoList');
+document.getElementById('uploadBtn').onclick=()=>panel.style.display='block';
+document.getElementById('galleryBtn').onclick=()=>panel.style.display='block';
+document.getElementById('panelClose').onclick=()=>panel.style.display='none';
+
+async function renderList(){
+list.innerHTML='';
+const saved=await getPhotos();
+
+document.getElementById('status').textContent=
+saved.length+' photos saved';
+
+saved.forEach(p=>{
+const card=document.createElement('div');
+card.className='photoCard';
+
+const img=document.createElement('img');
+img.src=URL.createObjectURL(p.blob);
+
+const input=document.createElement('input');
+input.placeholder='Optional name';
+input.value=p.name||'';
+
+input.onchange=async()=>{
+await updatePhoto(p.id,input.value);
+await rebuildGallery();
+};
+
+const del=document.createElement('button');
+del.textContent='Delete Photo';
+del.onclick=async()=>{
+await deletePhoto(p.id);
+await rebuildGallery();
+await renderList();
+};
+
+card.append(img,input,del);
+list.appendChild(card);
+});
+}
+
+document.getElementById('fileInput').onchange=async e=>{
+const files=[...e.target.files];
+document.getElementById('status').textContent='Saving photos...';
+
+for(const file of files){
+if(!file.type.startsWith('image/'))continue;
+await savePhoto({blob:file,name:''});
+}
+
+await rebuildGallery();
+await renderList();
+e.target.value='';
+};
 
 // Movement
 let moveX=0,moveY=0;
@@ -190,7 +416,6 @@ forward.setPointerCapture(e.pointerId);
 forward.addEventListener('pointerup',()=>movingForward=false);
 forward.addEventListener('pointercancel',()=>movingForward=false);
 
-// Keyboard controls
 addEventListener('keydown',e=>{
 if(e.key==='w'||e.key==='ArrowUp')movingForward=true;
 if(e.key==='a'||e.key==='ArrowLeft')moveX=-1;
@@ -203,49 +428,20 @@ movingForward=false;moveX=0;moveY=0;
 }
 });
 
-// Frame viewing
-const raycaster=new THREE.Raycaster();
-const pointer=new THREE.Vector2();
-
-renderer.domElement.addEventListener('click',e=>{
-pointer.x=(e.clientX/innerWidth)*2-1;
-pointer.y=-(e.clientY/innerHeight)*2+1;
-raycaster.setFromCamera(pointer,camera);
-const hits=raycaster.intersectObjects(scene.children,true);
-for(const hit of hits){
-const f=frames.find(a=>a.object===hit.object.parent || a.object===hit.object.parent?.parent);
-if(f){
-document.getElementById('ptitle').textContent=f.title;
-document.getElementById('pimage').style.display='none';
-document.getElementById('ptext').textContent='Your memory will be added here.';
-document.getElementById('popup').style.display='flex';
-break;
-}
-}
-});
-
-document.getElementById('close').onclick=()=>{
-document.getElementById('popup').style.display='none';
-};
-
-// Camera rotation + movement
+// Camera
 let angle=0;
 let speed=0.055;
 let walkTime=0;
 let dragging=false;
 let lastX=0;
 
-// Drag screen to rotate camera
 renderer.domElement.style.touchAction='none';
 
 renderer.domElement.addEventListener('pointerdown',e=>{
 dragging=true;
 lastX=e.clientX;
 });
-
-addEventListener('pointerup',()=>{
-dragging=false;
-});
+addEventListener('pointerup',()=>dragging=false);
 
 renderer.domElement.addEventListener('pointermove',e=>{
 if(!dragging)return;
@@ -253,14 +449,12 @@ angle-=(e.clientX-lastX)*0.005;
 lastX=e.clientX;
 });
 
-// Movement animation
 function animate(){
 requestAnimationFrame(animate);
 
-let forwardMove=movingForward ? 1 : -moveY;
+let forwardMove=movingForward?1:-moveY;
 let sideways=moveX;
 
-// Camera-relative movement
 let dx=sideways*Math.cos(angle)-forwardMove*Math.sin(angle);
 let dz=-sideways*Math.sin(angle)-forwardMove*Math.cos(angle);
 
@@ -268,16 +462,10 @@ let moving=Math.abs(dx)>0.01||Math.abs(dz)>0.01;
 
 if(moving){
 let len=Math.sqrt(dx*dx+dz*dz);
-dx/=len;
-dz/=len;
-
+dx/=len;dz/=len;
 character.position.x+=dx*speed;
 character.position.z+=dz*speed;
-
-// Face direction of movement
 character.rotation.y=Math.atan2(dx,dz);
-
-// Walking animation
 walkTime+=0.18;
 leftLeg.rotation.x=Math.sin(walkTime)*0.45;
 rightLeg.rotation.x=Math.sin(walkTime+Math.PI)*0.45;
@@ -286,20 +474,13 @@ leftLeg.rotation.x=0;
 rightLeg.rotation.x=0;
 }
 
-// Keep character inside museum
 character.position.x=Math.max(-5.5,Math.min(5.5,character.position.x));
 character.position.z=Math.max(-6,Math.min(5,character.position.z));
 
-// Camera follows and rotates
 camera.position.x=character.position.x+Math.sin(angle)*5;
 camera.position.z=character.position.z+Math.cos(angle)*5;
 camera.position.y=1.65;
-
-camera.lookAt(
-character.position.x,
-1.3,
-character.position.z
-);
+camera.lookAt(character.position.x,1.3,character.position.z);
 
 renderer.render(scene,camera);
 }
@@ -311,6 +492,13 @@ camera.aspect=innerWidth/innerHeight;
 camera.updateProjectionMatrix();
 renderer.setSize(innerWidth,innerHeight);
 });
+
+// Start
+await rebuildGallery();
+await renderList();
+camera.position.set(0,1.65,8);
+camera.lookAt(0,1.3,3);
+
 </script>
 </body>
 </html>
